@@ -1,0 +1,1 @@
+char *abrir(char *filename);

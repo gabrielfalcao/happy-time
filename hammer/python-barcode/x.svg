@@ -1,0 +1,54 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg width="104" height="100">
+<title>988935689111</title>
+<desc>
+	EAN-13:	988935689111
+	GNU-barcode:	0.98
+	barcode:	http://www.gnu.org
+</desc>
+<g fill="black">
+	<rect x="9" y="0" height="75" width="1" stroke-width="0"/>
+	<rect x="11" y="0" height="70" width="2" stroke-width="0"/>
+	<rect x="14" y="0" height="70" width="3" stroke-width="0"/>
+	<rect x="20" y="0" height="70" width="1" stroke-width="0"/>
+	<rect x="23" y="0" height="70" width="1" stroke-width="0"/>
+	<rect x="26" y="0" height="70" width="1" stroke-width="0"/>
+	<rect x="28" y="0" height="70" width="3" stroke-width="0"/>
+	<rect x="32" y="0" height="70" width="4" stroke-width="0"/>
+	<rect x="37" y="0" height="70" width="1" stroke-width="0"/>
+	<rect x="39" y="0" height="70" width="3" stroke-width="0"/>
+	<rect x="44" y="0" height="70" width="1" stroke-width="0"/>
+	<rect x="46" y="0" height="70" width="1" stroke-width="0"/>
+	<rect x="48" y="0" height="70" width="4" stroke-width="0"/>
+	<rect x="53" y="0" height="75" width="1" stroke-width="0"/>
+	<rect x="55" y="0" height="70" width="1" stroke-width="0"/>
+	<rect x="58" y="0" height="70" width="1" stroke-width="0"/>
+	<rect x="62" y="0" height="70" width="3" stroke-width="0"/>
+	<rect x="66" y="0" height="70" width="1" stroke-width="0"/>
+	<rect x="69" y="0" height="70" width="2" stroke-width="0"/>
+	<rect x="73" y="0" height="70" width="2" stroke-width="0"/>
+	<rect x="76" y="0" height="70" width="2" stroke-width="0"/>
+	<rect x="80" y="0" height="70" width="2" stroke-width="0"/>
+	<rect x="83" y="0" height="70" width="2" stroke-width="0"/>
+	<rect x="87" y="0" height="70" width="2" stroke-width="0"/>
+	<rect x="90" y="0" height="70" width="1" stroke-width="0"/>
+	<rect x="93" y="0" height="70" width="1" stroke-width="0"/>
+	<rect x="97" y="0" height="75" width="1" stroke-width="0"/>
+</g>
+<g font-family="Helvetica" font-size="12">
+	<text x="0" y="80">9</text>
+	<text x="10" y="80">8</text>
+	<text x="17" y="80">8</text>
+	<text x="24" y="80">9</text>
+	<text x="31" y="80">3</text>
+	<text x="38" y="80">5</text>
+	<text x="45" y="80">6</text>
+	<text x="55" y="80">8</text>
+	<text x="62" y="80">9</text>
+	<text x="69" y="80">1</text>
+	<text x="76" y="80">1</text>
+	<text x="83" y="80">1</text>
+	<text x="90" y="80">8</text>
+</g>
+</svg>
