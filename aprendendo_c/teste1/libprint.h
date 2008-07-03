@@ -20,4 +20,4 @@
 #include <stdlib.h>
 #include <string.h>
 
-/*void print(char * string);*/
+void print(char * string);
