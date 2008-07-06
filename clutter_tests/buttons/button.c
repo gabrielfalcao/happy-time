@@ -269,7 +269,7 @@ handcar_new()
   all->video = clutter_gst_video_texture_new ();
   clutter_actor_set_size (all->video, 270, 203);
   clutter_actor_set_position (all->video, 20, 120);
-  clutter_actor_set_opacity (all->video, 0x50);
+  clutter_actor_set_opacity (all->video, 0xff);
 
   //  all->clutter_group_add_many (all->container1, all->rect1);
   all->videosink = clutter_gst_video_sink_new (CLUTTER_TEXTURE(all->video));
@@ -292,8 +292,7 @@ handcar_new()
 void
 play_video (HandCar *all)
 {
-  g_object_set (all->player, "uri", "file:///home/gabriel/Desktop/Downloads/Brasileirinhas.200806.Tomando.no.Cu.Cena1.Babalu.XXX.DVDRip.wmv", NULL);
-  //  g_object_set (all->player, "uri", "file:///home/gabriel/Desktop/Downloads/xoxotao.wmv", NULL);
+  g_object_set (all->player, "uri", "file:///home/gabriel/Filmes/Jeff.Dunham.Spark.Of.Insanity.2007.DVDRip.XviD.AC3-STS-cd1.avi", NULL);
   gst_element_set_state (all->player, GST_STATE_PLAYING);
 
 }
