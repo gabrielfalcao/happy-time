@@ -20,6 +20,16 @@
 #include "gb-player-callbacks.h"
 #include "gb-player.h"
 
+static gboolean
+coord_within_actor (ClutterActor *actor, gint x, gint y)
+{
+  gint x1, x2, y1, y2;
+
+  clutter_actor_get_coords (actor, &x1, &y1, &x2, &y2);
+
+  return ((x >= x1 && x < x2 || x == x2) && (y >= y1 && y < y2 || y == y2));
+}
+
 void
 on_actor_mouse_move (ClutterActor *actor,
                      ClutterEvent *event,
@@ -112,6 +122,7 @@ on_click_open_file (ClutterActor *actor,
 												  GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 												  GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
 												  NULL);
+
 	g_signal_connect (player->priv->filechooser, "response",
 					  G_CALLBACK(finish_file_open), user_data);
 
@@ -121,9 +132,41 @@ on_click_open_file (ClutterActor *actor,
 guint32
 on_alpha (ClutterAlpha *alpha, gpointer data)
 {
-  ClutterTimeline *timeline = clutter_alpha_get_timeline (alpha);
-  const int current_frame_num = clutter_timeline_get_current_frame (timeline);
-  const int n_frames = clutter_timeline_get_n_frames (timeline);
+	ClutterTimeline *timeline = clutter_alpha_get_timeline (alpha);
+	const int current_frame_num = clutter_timeline_get_current_frame (timeline);
+	const int n_frames = clutter_timeline_get_n_frames (timeline);
 
-  return (CLUTTER_ALPHA_MAX_ALPHA * current_frame_num / n_frames);
+	return (CLUTTER_ALPHA_MAX_ALPHA * current_frame_num / n_frames);
+}
+void
+on_timeline_completed (ClutterTimeline *timeline,
+                       gpointer user_data)
+{
+	clutter_timeline_stop (timeline);
+}
+
+void
+on_mouse_move (ClutterActor *actor,
+               ClutterEvent *event,
+               gpointer user_data)
+{
+	gint x, y;
+	GbPlayer *player = GB_PLAYER(user_data);
+
+	clutter_event_get_coords (event, &x, &y);
+	if ((coord_within_actor(player->priv->controls_group, x, y)) ||
+		(coord_within_actor(player->priv->window_buttons_group, x, y)) ||
+		(coord_within_actor(player->priv->title_group, x, y)) && 
+		(!player->priv->controls_visible))
+		{
+			clutter_timeline_stop (player->priv->show_hide_timeline);
+			gb_player_show_controls (player);
+			player->priv->controls_visible = TRUE;
+		}
+	else
+		{
+			clutter_timeline_stop (player->priv->show_hide_timeline);
+			gb_player_hide_controls (player);
+			player->priv->controls_visible = FALSE;
+		}
 }

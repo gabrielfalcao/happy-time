@@ -48,3 +48,11 @@ on_click_open_file (ClutterActor *actor,
                     gpointer user_data);
 guint32
 on_alpha (ClutterAlpha *alpha, gpointer data);
+
+void
+on_timeline_completed (ClutterTimeline *timeline,
+                       gpointer user_data);
+void
+on_mouse_move (ClutterActor *actor,
+               ClutterEvent *event,
+               gpointer user_data);

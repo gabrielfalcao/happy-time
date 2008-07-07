@@ -58,7 +58,6 @@ struct _GbPlayerPrivate
 	ClutterActor *stage;
 	ClutterTimeline *show_hide_timeline;
 	ClutterTimeline *playback_timeline;
-	ClutterEffectTemplate *effect_template;
 	/* <groups> */
 	ClutterActor *title_group;
 	ClutterActor *window_buttons_group;
@@ -114,6 +113,7 @@ struct _GbPlayerPrivate
 
 	/* my stuff :) */
 	gboolean playing;
+	gboolean controls_visible;
 	gint last_second; /* if compare the gint64 time, will be too precise.
 						 I need only the "seconds" difference */
 	gchar *filename;

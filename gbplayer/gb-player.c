@@ -105,6 +105,7 @@ gb_player_constructor (GType type, guint n_construct_properties,
 	p->bgpixbuf = gdk_pixbuf_new_from_file(IMG_PATH "/background.svg", NULL);
 	p->bglogo = gdk_pixbuf_new_from_file(IMG_PATH "/logo.svg", NULL);
 	p->time = 0;
+	p->controls_visible = TRUE;
 	p->last_second = -1;
 	p->filename = NULL;
 	p->playing = FALSE;
@@ -112,15 +113,17 @@ gb_player_constructor (GType type, guint n_construct_properties,
 
 
 
-	p->show_hide_timeline = clutter_timeline_new_for_duration (4000);
-	clutter_timeline_start(p->show_hide_timeline);
-
-	p->playback_timeline = clutter_timeline_new_for_duration (1000);
-	g_signal_connect(p->playback_timeline, "new-frame",
-					 G_CALLBACK(playback_cb),
+	p->show_hide_timeline = clutter_timeline_new_for_duration (1000);
+	g_signal_connect(p->show_hide_timeline, "completed",
+					 G_CALLBACK(on_timeline_completed),
 					 (gpointer) self);
-	clutter_timeline_set_loop(p->playback_timeline, TRUE);
-	clutter_timeline_start(p->playback_timeline);
+
+	/* p->playback_timeline = clutter_timeline_new_for_duration (1000); */
+	/* g_signal_connect(p->playback_timeline, "new-frame", */
+	/* 				 G_CALLBACK(playback_cb), */
+	/* 				 (gpointer) self); */
+	/* clutter_timeline_set_loop(p->playback_timeline, TRUE); */
+	/* clutter_timeline_start(p->playback_timeline); */
 
 	_gb_player_setup_widgets (self);
 	_gb_player_connect_signals (self);
@@ -273,6 +276,7 @@ gb_player_pause (GbPlayer *self)
 }
 	
 void
+
 gb_player_stop (GbPlayer *self)
 {
 	if (!self->priv->playing)
@@ -287,14 +291,18 @@ gb_player_stop (GbPlayer *self)
 gboolean
 gb_player_hide_controls (GbPlayer *self)
 {
+	ClutterEffectTemplate *effect_template;
 	gint x, y;
 	ClutterKnot t_knot[2];
 	ClutterKnot b_knot[2];
 	ClutterKnot w_knot[2];
 	ClutterKnot c_knot[2];
-	if (!self->priv->playing)
+	if ((!self->priv->playing) || (clutter_timeline_is_playing (self->priv->show_hide_timeline)))
 		return TRUE;
 
+	clutter_timeline_start(self->priv->show_hide_timeline);
+
+	effect_template = clutter_effect_template_new (self->priv->show_hide_timeline, &on_alpha);
 	clutter_actor_get_position (self->priv->title_group, &x, &y);
 	t_knot[0].x = x;
 	t_knot[0].y = y;
@@ -305,29 +313,35 @@ gb_player_hide_controls (GbPlayer *self)
 	b_knot[0].y = y;
 	b_knot[1].x=  1000;
 	b_knot[1].y= -600;
-	clutter_actor_get_position (self->priv->window_buttons_group, &x, &y);
+	clutter_actor_get_position (self->priv->controls_group, &x, &y);
 	c_knot[0].x = x;
 	c_knot[0].y = y;
 	c_knot[1].x=  x;
 	c_knot[1].y=  700;
  
-	clutter_effect_path (self->priv->effect_template, self->priv->title_group, t_knot, sizeof(t_knot) / sizeof(ClutterKnot), NULL, NULL);
-	clutter_effect_path (self->priv->effect_template, self->priv->window_buttons_group, b_knot, sizeof(b_knot) / sizeof(ClutterKnot), NULL, NULL);
-	clutter_effect_fade (self->priv->effect_template, self->priv->title_group, 0, NULL, NULL);
-	clutter_effect_fade (self->priv->effect_template, self->priv->window_buttons_group, 0, NULL, NULL);
+	/* clutter_effect_path (effect_template, self->priv->title_group, t_knot, sizeof(t_knot) / sizeof(ClutterKnot), NULL, NULL); */
+	/* clutter_effect_path (effect_template, self->priv->window_buttons_group, b_knot, sizeof(b_knot) / sizeof(ClutterKnot), NULL, NULL); */
+	/* clutter_effect_path (effect_template, self->priv->controls_group, c_knot, sizeof(c_knot) / sizeof(ClutterKnot), NULL, NULL); */
+	clutter_effect_fade (effect_template, self->priv->title_group, 0, NULL, NULL);
+	clutter_effect_fade (effect_template, self->priv->window_buttons_group, 0, NULL, NULL);
+	clutter_effect_fade (effect_template, self->priv->controls_group, 0, NULL, NULL);
+	g_object_unref (effect_template);
 	return TRUE;
 }
 
 gboolean
 gb_player_show_controls (GbPlayer *self)
 {
+	ClutterEffectTemplate *effect_template;
 	gint x, y;
 	ClutterKnot t_knot[2];
 	ClutterKnot b_knot[2];
 	ClutterKnot c_knot[2];
-	if (!self->priv->playing)
+	if ((!self->priv->playing) || (clutter_timeline_is_playing (self->priv->show_hide_timeline)))
 		return TRUE;
-
+	
+	clutter_timeline_start(self->priv->show_hide_timeline);
+	effect_template = clutter_effect_template_new (self->priv->show_hide_timeline, &on_alpha);
 	clutter_actor_get_position (self->priv->title_group, &x, &y);
 	t_knot[0].x = x;
 	t_knot[0].y = y;
@@ -344,13 +358,13 @@ gb_player_show_controls (GbPlayer *self)
 	c_knot[1].x=  ((640 / 2) - (400 / 2));
 	c_knot[1].y=  480 - 70 - 30;
  
-	clutter_effect_path (self->priv->effect_template, self->priv->title_group, t_knot, sizeof(t_knot) / sizeof(ClutterKnot), NULL, NULL);
-	clutter_effect_path (self->priv->effect_template, self->priv->window_buttons_group, b_knot, sizeof(b_knot) / sizeof(ClutterKnot), NULL, NULL);
-	clutter_effect_path (self->priv->effect_template, self->priv->window_buttons_group, c_knot, sizeof(c_knot) / sizeof(ClutterKnot), NULL, NULL);
-	clutter_effect_fade (self->priv->effect_template, self->priv->title_group, 0x8f, NULL, NULL);
-	clutter_effect_fade (self->priv->effect_template, self->priv->window_buttons_group, 0x8f, NULL, NULL);
-	clutter_effect_fade (self->priv->effect_template, self->priv->controls_group, 0x8f, NULL, NULL);
-
+	/* clutter_effect_path (effect_template, self->priv->title_group, t_knot, sizeof(t_knot) / sizeof(ClutterKnot), NULL, NULL); */
+	/* clutter_effect_path (effect_template, self->priv->window_buttons_group, b_knot, sizeof(b_knot) / sizeof(ClutterKnot), NULL, NULL); */
+	/* clutter_effect_path (effect_template, self->priv->controls_group, c_knot, sizeof(c_knot) / sizeof(ClutterKnot), NULL, NULL); */
+	clutter_effect_fade (effect_template, self->priv->title_group, 0x8f, NULL, NULL);
+	clutter_effect_fade (effect_template, self->priv->window_buttons_group, 0x8f, NULL, NULL);
+	clutter_effect_fade (effect_template, self->priv->controls_group, 0x8f, NULL, NULL);
+	g_object_unref (effect_template);
 	return TRUE;
 }
 	
@@ -456,12 +470,13 @@ _gb_player_setup_widgets (GbPlayer *self)
 	clutter_actor_set_reactive (p->controls_play_pause, TRUE);
 	clutter_actor_set_reactive (p->window_aspect_button, TRUE);
 	clutter_actor_set_reactive (p->window_open_file_button, TRUE);
+	clutter_actor_set_reactive (p->stage, TRUE);
 
 	clutter_actor_hide (p->bg_video);
 	p->videosink = clutter_gst_video_sink_new (CLUTTER_TEXTURE(p->bg_video));
 	g_object_set (p->player, "video-sink", p->videosink, NULL);
 	
-	p->effect_template = clutter_effect_template_new (p->show_hide_timeline, &on_alpha);
+
 
 }
 static void
@@ -483,4 +498,6 @@ _gb_player_connect_signals (GbPlayer *self)
 
 	g_signal_connect(p->controls_play_pause, "button-press-event", G_CALLBACK(on_click_play), (gpointer) self);
 	g_signal_connect(p->window_open_file_button, "button-press-event", G_CALLBACK(on_click_open_file), (gpointer) self);
+
+	g_signal_connect(p->stage, "motion-event", G_CALLBACK(on_mouse_move), (gpointer) self);
 }
