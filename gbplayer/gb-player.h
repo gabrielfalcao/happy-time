@@ -56,6 +56,9 @@ struct _GbPlayerPrivate
 
 	/* <clutter-stuff>*/
 	ClutterActor *stage;
+	ClutterTimeline *show_hide_timeline;
+	ClutterTimeline *playback_timeline;
+	ClutterEffectTemplate *effect_template;
 	/* <groups> */
 	ClutterActor *title_group;
 	ClutterActor *window_buttons_group;
@@ -76,6 +79,8 @@ struct _GbPlayerPrivate
 
 	/* <bg-group> */
 	ClutterActor *bg_video;
+	ClutterActor *bg_image;
+	ClutterActor *bg_logo;
 	/* </bg-group> */
 
 	/* <controls-group> */
@@ -97,15 +102,21 @@ struct _GbPlayerPrivate
 	GdkPixbuf *fullscreen;
 	GdkPixbuf *unfullscreen;
 	GdkPixbuf *open_file;
+	GdkPixbuf *bgpixbuf;
+	GdkPixbuf *bglogo;
 	/* <pixbuf-stuff> */
 
 	/* <gtk-stuff> */
 	GtkWidget *window;
 	GtkWidget *stage_widget;
+	GtkWidget *filechooser;
 	/* </gtk-stuff> */
 
 	/* my stuff :) */
 	gboolean playing;
+	gint last_second; /* if compare the gint64 time, will be too precise.
+						 I need only the "seconds" difference */
+	gchar *filename;
 	gint minutes;
 	gint seconds;
 	gint time;
@@ -123,12 +134,15 @@ struct _GbPlayer
 {
 	GObject parent_instance;
 	GbPlayerPrivate *priv;
-	GstElement * player;
 };
 
 GType gb_player_get_type (void) G_GNUC_CONST;
 void gb_player_play (GbPlayer *self);
-
+void gb_player_pause (GbPlayer *self);
+void gb_player_stop (GbPlayer *self);
+void gb_player_set_title (GbPlayer *self);
+gboolean gb_player_hide_controls (GbPlayer *self);
+gboolean gb_player_show_controls (GbPlayer *self);
 G_END_DECLS
 
 #endif /* _GB_PLAYER_H_ */
