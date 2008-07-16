@@ -25,11 +25,6 @@
   (g_file_test (filename, G_FILE_TEST_EXISTS), \
    "The file \"%s\" does not exist\n", filename)
 
-typedef struct _closure_data {
-  gchar *data;
-  guint length;
-} ClosureData;
-
 static cairo_status_t
 append_to_string (void *closure,
                 unsigned char *data,
@@ -37,18 +32,18 @@ append_to_string (void *closure,
 {
   ClosureData *cdata = (ClosureData *) closure;
   gchar *new = g_strdup(cdata->data);
-  g_free (cdata->data);
   cdata->data = g_strconcat (new, (gchar *) data, NULL);
   cdata->length += length;
+  g_free (cdata->data);
+  g_free (new);
   return CAIRO_STATUS_SUCCESS;
 }
 
-guint8 *
+ClosureData *
 svg_data_to_pdf_data_with_destination_size (const gchar *source, 
                                             gsize source_len,
                                             gdouble width,
-                                            gdouble height,
-                                            gsize *destination_len)
+                                            gdouble height)
 {
   RsvgHandle *svg = NULL;
   RsvgDimensionData dimensions;
@@ -111,8 +106,7 @@ svg_data_to_pdf_data_with_destination_size (const gchar *source,
   cairo_surface_destroy (surface);
   rsvg_handle_close (svg, NULL);
   g_object_unref (svg);
-  *destination_len = cdata->length;
-  return (guint8 *) cdata->data;
+  return cdata;
 }
 
 void
@@ -179,24 +173,20 @@ svg_file_to_pdf_file2 (const gchar *source_filename,
                       gdouble width,
                       gdouble height)
 {
-  
-  gsize srcsize, dstsize;
-  gchar *srcdata, *dstdata;
+  ClosureData *cdata;
+  gsize srcsize;
+  gchar *srcdata;
   GError *error = NULL;
   FILE *file;
 
   g_file_get_contents (source_filename, &srcdata, NULL, NULL);
-  dstdata = svg_data_to_pdf_data_with_destination_size (srcdata,
-                                                        strlen(srcdata) -1,
-                                                        width,
-                                                        height,
-                                                        &dstsize);
-  file = fopen ("x.svg", "w");
-  fwrite (srcdata, sizeof(char), strlen(srcdata), file);
-  fclose(file);
+  cdata = svg_data_to_pdf_data_with_destination_size (srcdata,
+                                                      strlen(srcdata) -1,
+                                                      width,
+                                                      height);
 
   file = fopen (destination_filename, "wb");
-  fwrite (dstdata, sizeof(char), dstsize, file);
+  fwrite (cdata->data, sizeof(guint8), cdata->length, file);
   fclose(file);
   if (error)
     {
