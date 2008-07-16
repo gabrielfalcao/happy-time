@@ -54,7 +54,7 @@ on_click_play (ClutterActor *actor,
 	GbPlayer *player = GB_PLAYER (user_data);
 	
 	if (player->priv->playing)
-		gb_player_pause (player);
+		gb_player_stop (player);
 	else
 		gb_player_play (player);
 }

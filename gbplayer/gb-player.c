@@ -249,8 +249,7 @@ gb_player_play (GbPlayer *self)
 
 	if (!self->priv->filename)
 		{
-			gtk_widget_show (GTK_WIDGET(dialog));
-			//	gtk_widget_destroy (dialog);
+			gtk_dialog_run (GTK_DIALOG(dialog));
 			return;
 		}
 	if (self->priv->playing)
@@ -258,9 +257,8 @@ gb_player_play (GbPlayer *self)
 
 	g_object_set (self->priv->player, "uri", self->priv->filename, NULL);
 	gst_element_set_state (self->priv->player, GST_STATE_PLAYING);
-	clutter_texture_set_pixbuf (CLUTTER_TEXTURE(self->priv->controls_play_pause), self->priv->pause, NULL);
+	clutter_texture_set_pixbuf (CLUTTER_TEXTURE(self->priv->controls_play_pause), self->priv->stop, NULL);
 	g_object_set (self, "playing", TRUE, NULL);
-	g_timeout_add (3, (GSourceFunc) gb_player_hide_controls, (gpointer) self);
 }
 
 void
@@ -272,7 +270,6 @@ gb_player_pause (GbPlayer *self)
 	gst_element_set_state (self->priv->player, GST_STATE_PAUSED);
 	clutter_texture_set_pixbuf (CLUTTER_TEXTURE(self->priv->controls_play_pause), self->priv->play, NULL);
 	g_object_set (self, "playing", FALSE, NULL);
-	g_timeout_add (3, (GSourceFunc) gb_player_show_controls, (gpointer) self);
 }
 	
 void
@@ -282,10 +279,9 @@ gb_player_stop (GbPlayer *self)
 	if (!self->priv->playing)
 		return;
 
-	gst_element_set_state (self->priv->player, GST_STATE_NULL);
+	gst_element_set_state (self->priv->player, GST_STATE_PAUSED);
 	clutter_texture_set_pixbuf (CLUTTER_TEXTURE(self->priv->controls_play_pause), self->priv->play, NULL);
 	g_object_set (self, "playing", FALSE, NULL);
-	g_timeout_add (3, (GSourceFunc) gb_player_show_controls, (gpointer) self);
 }
 
 gboolean
@@ -298,7 +294,7 @@ gb_player_hide_controls (GbPlayer *self)
 	ClutterKnot w_knot[2];
 	ClutterKnot c_knot[2];
 	if ((!self->priv->playing) || (clutter_timeline_is_playing (self->priv->show_hide_timeline)))
-		return TRUE;
+		return FALSE;
 
 	clutter_timeline_start(self->priv->show_hide_timeline);
 
@@ -318,15 +314,12 @@ gb_player_hide_controls (GbPlayer *self)
 	c_knot[0].y = y;
 	c_knot[1].x=  x;
 	c_knot[1].y=  700;
- 
-	/* clutter_effect_path (effect_template, self->priv->title_group, t_knot, sizeof(t_knot) / sizeof(ClutterKnot), NULL, NULL); */
-	/* clutter_effect_path (effect_template, self->priv->window_buttons_group, b_knot, sizeof(b_knot) / sizeof(ClutterKnot), NULL, NULL); */
-	/* clutter_effect_path (effect_template, self->priv->controls_group, c_knot, sizeof(c_knot) / sizeof(ClutterKnot), NULL, NULL); */
+
 	clutter_effect_fade (effect_template, self->priv->title_group, 0, NULL, NULL);
 	clutter_effect_fade (effect_template, self->priv->window_buttons_group, 0, NULL, NULL);
 	clutter_effect_fade (effect_template, self->priv->controls_group, 0, NULL, NULL);
 	g_object_unref (effect_template);
-	return TRUE;
+	return FALSE;
 }
 
 gboolean
@@ -338,7 +331,7 @@ gb_player_show_controls (GbPlayer *self)
 	ClutterKnot b_knot[2];
 	ClutterKnot c_knot[2];
 	if ((!self->priv->playing) || (clutter_timeline_is_playing (self->priv->show_hide_timeline)))
-		return TRUE;
+		return FALSE;
 	
 	clutter_timeline_start(self->priv->show_hide_timeline);
 	effect_template = clutter_effect_template_new (self->priv->show_hide_timeline, &on_alpha);
@@ -358,14 +351,11 @@ gb_player_show_controls (GbPlayer *self)
 	c_knot[1].x=  ((640 / 2) - (400 / 2));
 	c_knot[1].y=  480 - 70 - 30;
  
-	/* clutter_effect_path (effect_template, self->priv->title_group, t_knot, sizeof(t_knot) / sizeof(ClutterKnot), NULL, NULL); */
-	/* clutter_effect_path (effect_template, self->priv->window_buttons_group, b_knot, sizeof(b_knot) / sizeof(ClutterKnot), NULL, NULL); */
-	/* clutter_effect_path (effect_template, self->priv->controls_group, c_knot, sizeof(c_knot) / sizeof(ClutterKnot), NULL, NULL); */
-	clutter_effect_fade (effect_template, self->priv->title_group, 0x8f, NULL, NULL);
-	clutter_effect_fade (effect_template, self->priv->window_buttons_group, 0x8f, NULL, NULL);
-	clutter_effect_fade (effect_template, self->priv->controls_group, 0x8f, NULL, NULL);
+	clutter_effect_fade (effect_template, self->priv->title_group, 0xff, NULL, NULL);
+	clutter_effect_fade (effect_template, self->priv->window_buttons_group, 0xff, NULL, NULL);
+	clutter_effect_fade (effect_template, self->priv->controls_group, 0xff, NULL, NULL);
 	g_object_unref (effect_template);
-	return TRUE;
+	return FALSE;
 }
 	
 ClutterActor *
@@ -375,6 +365,8 @@ gb_player_rounded_rect (GbPlayer *self,
 						ClutterColor *bgcolor,
 						gint round_radius)
 {
+	/* Mostly code of this function was got from Tweet,  */
+	/* thanks to Emanuelle Bassi. (http://live.gnome.org/Tweet) */
 	ClutterActor *actor;
 	cairo_t *cr;
 	
@@ -408,7 +400,7 @@ _gb_player_setup_widgets (GbPlayer *self)
 	p->title_group = clutter_group_new ();
 	p->title_rect = gb_player_rounded_rect (self, 400, 36, &cc_white, 35);
 	p->title_label = clutter_label_new_full ("DejaVu Sans",
-											 "<span size='11500'><b>Metallica - Sad But True - Load(1991)</b></span>",
+											 "<span size='11500'><b>Here comes the media's title</b></span>",
 											 &cc_black);
 	clutter_label_set_use_markup (CLUTTER_LABEL(p->title_label), TRUE);
 	clutter_actor_set_position (p->title_group, -20, 20);
