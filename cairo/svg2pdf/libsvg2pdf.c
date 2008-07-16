@@ -30,29 +30,6 @@ typedef struct _closure_data {
   guint length;
 } ClosureData;
 
-static void *
-get_file_contents (const char *filename)
-{
-  FILE *fh;
-  char *contents;
-  char *tmp;
-  contents = g_malloc0 (256);
-  tmp = g_malloc (256);
-  fh = fopen (filename, "rb");
-  if (!fh)
-    return NULL;
-  while (!feof (fh))
-    {
-      fread (tmp, 256, 1, fh);
-      asprintf (&contents, "%s%s", contents, tmp);
-      g_free (tmp);
-      tmp = g_malloc0(256);
-    }
-  fclose (fh);
-  g_free (tmp);
-  return contents;
-}
-
 static cairo_status_t
 append_to_string (void *closure,
                 unsigned char *data,
@@ -62,12 +39,12 @@ append_to_string (void *closure,
   gchar *new = g_strdup(cdata->data);
   g_free (cdata->data);
   cdata->data = g_strconcat (new, (gchar *) data, NULL);
-  /* g_strlcat (cdata->data, (gchar *)data, length + strlen(cdata->data)); */
+  cdata->length += length;
   return CAIRO_STATUS_SUCCESS;
 }
 
 guint8 *
-svg_data_to_pdf_data_with_destination_size (const guint8 *source, 
+svg_data_to_pdf_data_with_destination_size (const gchar *source, 
                                             gsize source_len,
                                             gdouble width,
                                             gdouble height,
@@ -84,12 +61,13 @@ svg_data_to_pdf_data_with_destination_size (const guint8 *source,
   ClosureData *cdata;
   rsvg_init ();
   
-  if (source_len < 0)
-    source_len = strlen (source);
-  gchar *zaz = (gchar *) source;
-  svg = rsvg_handle_new_from_data ((guint8 *)zaz, source_len, &error);
+  if (source_len == 0)
+    source_len = strlen (source) -1;
+
+  svg = rsvg_handle_new_from_data ((guint8 *) source, source_len, &error);
   cdata = g_new0(ClosureData, 1);
   cdata->data = g_strdup_printf ("");
+  cdata->length = 0;
 
   if (error)
     {
@@ -133,8 +111,7 @@ svg_data_to_pdf_data_with_destination_size (const guint8 *source,
   cairo_surface_destroy (surface);
   rsvg_handle_close (svg, NULL);
   g_object_unref (svg);
-  len = (gsize) strlen(cdata->data);
-  destination_len = &len;
+  *destination_len = cdata->length;
   return (guint8 *) cdata->data;
 }
 
@@ -208,12 +185,15 @@ svg_file_to_pdf_file2 (const gchar *source_filename,
   GError *error = NULL;
   FILE *file;
 
-  srcdata = (gchar *) get_file_contents (source_filename);
-  dstdata = svg_data_to_pdf_data_with_destination_size ((guint8 *) srcdata,
-                                                        srcsize,
+  g_file_get_contents (source_filename, &srcdata, NULL, NULL);
+  dstdata = svg_data_to_pdf_data_with_destination_size (srcdata,
+                                                        strlen(srcdata) -1,
                                                         width,
                                                         height,
                                                         &dstsize);
+  file = fopen ("x.svg", "w");
+  fwrite (srcdata, sizeof(char), strlen(srcdata), file);
+  fclose(file);
 
   file = fopen (destination_filename, "wb");
   fwrite (dstdata, sizeof(char), dstsize, file);

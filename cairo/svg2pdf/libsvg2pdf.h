@@ -33,9 +33,8 @@ typedef struct _svgdata {
 } SvgData;
 
 void svg_file_to_pdf_file (const gchar *source_filename, const gchar *destination_filename, gdouble width, gdouble height);
-guint8 *svg_data_to_pdf_data_with_destination_size (const guint8 *source, gsize source_len, gdouble width, gdouble height, gsize *destination_len);
 void svg2pdf (const gchar *source_filename, const gchar *destination_filename);
 void svg2pdf2 (const gchar *source_filename, const gchar *destination_filename);
 void svg_file_to_pdf_file2 (const gchar *source_filename, const gchar *destination_filename, gdouble width, gdouble height);
-guint8 * svg_data_to_pdf_data_with_destination_size (const guint8 *source, gsize source_len, gdouble width, gdouble height, gsize *destination_len);
+guint8 * svg_data_to_pdf_data_with_destination_size (const gchar *source, gsize source_len, gdouble width, gdouble height, gsize *destination_len);
 
