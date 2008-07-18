@@ -31,11 +31,9 @@ append_to_string (void *closure,
                 unsigned int length)
 {
   ClosureData *cdata = (ClosureData *) closure;
-  gchar *new = g_strdup(cdata->data);
-  cdata->data = g_strconcat (new, (gchar *) data, NULL);
   cdata->length += length;
-  g_free (cdata->data);
-  g_free (new);
+  cdata->data = (gchar*)realloc(cdata->data, sizeof(gchar)*cdata->length);
+  memcpy(cdata->data+(cdata->length-length), data, length);
   return CAIRO_STATUS_SUCCESS;
 }
 
@@ -61,7 +59,7 @@ svg_data_to_pdf_data_with_destination_size (const gchar *source,
 
   svg = rsvg_handle_new_from_data ((guint8 *) source, source_len, &error);
   cdata = g_new0(ClosureData, 1);
-  cdata->data = g_strdup_printf ("");
+  cdata->data = (gchar*)malloc(sizeof(gchar));
   cdata->length = 0;
 
   if (error)
@@ -179,14 +177,14 @@ svg_file_to_pdf_file2 (const gchar *source_filename,
   GError *error = NULL;
   FILE *file;
 
-  g_file_get_contents (source_filename, &srcdata, NULL, NULL);
+  g_file_get_contents (source_filename, &srcdata, &srcsize, NULL);
   cdata = svg_data_to_pdf_data_with_destination_size (srcdata,
-                                                      strlen(srcdata) -1,
+                                                      srcsize,
                                                       width,
                                                       height);
 
   file = fopen (destination_filename, "wb");
-  fwrite (cdata->data, sizeof(guint8), cdata->length, file);
+  fwrite (cdata->data, sizeof(gchar), cdata->length, file);
   fclose(file);
   if (error)
     {
