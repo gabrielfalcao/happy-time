@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2008 Gabriel Falcão <gabriel@nacaolivre.org>
  *
  * This program is free software; you can redistribute it and/or
@@ -16,20 +16,14 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include "libsvg2pdf.h"
-#define return_and_tell_if_fail(condition, string, format) \
-  if (!condition) g_printerr (string, format); return
-#define return_if_no_file(filename) return_and_tell_if_fail \
-  (g_file_test (filename, G_FILE_TEST_EXISTS), \
-   "The file \"%s\" does not exist\n", filename)
 
 static cairo_status_t
 append_to_string (void *closure,
-                unsigned char *data,
-                unsigned int length)
+                  unsigned char *data,
+                  unsigned int length)
 {
   ClosureData *cdata = (ClosureData *) closure;
   cdata->length += length;
@@ -60,7 +54,7 @@ svg_data_to_pdf_data_with_destination_size (const gchar *source,
 
   svg = rsvg_handle_new_from_data ((guint8 *) source, source_len, &error);
   cdata = g_new0(ClosureData, 1);
-  cdata->data = (gchar*)malloc(sizeof(gchar));
+  cdata->data = (gchar*) malloc(sizeof(gchar));
   cdata->length = 0;
 
   if (error)
@@ -108,7 +102,7 @@ svg_data_to_pdf_data_with_destination_size (const gchar *source,
   return cdata;
 }
 
-void
+gboolean
 svg_file_to_pdf_file (const gchar *source_filename, 
                     const gchar *destination_filename,
                     gdouble width,
@@ -128,13 +122,13 @@ svg_file_to_pdf_file (const gchar *source_filename,
     {
       g_printerr ("Error when loading the SVG file \"%s\":%s\n",
                   source_filename, error->message);
-      return;
+      return FALSE;
     }
 
   if (!svg)
     {
       g_printerr ("Impossible to create the rsvg handler\n");
-      return;
+      return FALSE;
     }
     
   rsvg_handle_get_dimensions (svg, &dimensions);
@@ -149,7 +143,7 @@ svg_file_to_pdf_file (const gchar *source_filename,
     {
       g_printerr ("Error when creating the PDF file \"%s\":%s\n",
                   destination_filename, cairo_status_to_string (status));
-      return;
+      return FALSE;
     }
   
   cairo = cairo_create (surface);
@@ -165,47 +159,6 @@ svg_file_to_pdf_file (const gchar *source_filename,
   cairo_surface_destroy (surface);
   rsvg_handle_close (svg, NULL);
   g_object_unref (svg);
-}
-void
-svg_file_to_pdf_file2 (const gchar *source_filename, 
-                      const gchar *destination_filename,
-                      gdouble width,
-                      gdouble height)
-{
-  ClosureData *cdata;
-  gsize srcsize;
-  gchar *srcdata;
-  GError *error = NULL;
-  FILE *file;
 
-  g_file_get_contents (source_filename, &srcdata, &srcsize, NULL);
-  cdata = svg_data_to_pdf_data_with_destination_size (srcdata,
-                                                      srcsize,
-                                                      width,
-                                                      height);
-
-  file = fopen (destination_filename, "wb");
-  fwrite (cdata->data, sizeof(gchar), cdata->length, file);
-  fclose(file);
-  if (error)
-    {
-      g_printerr ("%s\n", error->message);
-      return;
-    }
-}
-
-void
-svg2pdf (const gchar *source_filename,
-        const gchar *destination_filename)
-{
-  svg_file_to_pdf_file (source_filename,
-                        destination_filename, -1, -1);
-}
-
-void
-svg2pdf2 (const gchar *source_filename,
-        const gchar *destination_filename)
-{
-  svg_file_to_pdf_file2 (source_filename,
-                         destination_filename, -1, -1);
+  return TRUE;
 }
