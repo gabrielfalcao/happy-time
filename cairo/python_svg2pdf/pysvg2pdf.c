@@ -19,26 +19,63 @@
 #include "libsvg2pdf.h"
 #include "pysvg2pdf.h"
 
+
 PyObject *
-svg2pdf (PyObject *self, PyObject *args)
+file_to_file (PyObject *self, PyObject *args)
 {
   const gchar *source_filename, *destination_filename;
   gboolean retval;
+  GError *error = NULL;
 
   if (!PyArg_ParseTuple(args, "s|s:", &source_filename, &destination_filename))
     return NULL;
 
   retval = svg_file_to_pdf_file (source_filename,
-                                 destination_filename, -1, -1);
-  return retval ? Py_BuildValue("s", "Done!") : Py_BuildValue("");
+                                 destination_filename, -1, -1, &error);
+  if (error){
+    PyErr_SetString(PyExc_RuntimeError, error->message);
+    return NULL;
+  }
+
+  return retval ? Py_True : Py_False;
+}
+
+PyObject *
+string_to_string (PyObject *self, PyObject *args)
+{
+  const gchar *svg_data;
+  gchar *pdfdata;
+  ClosureData *cdata;
+  GError *error = NULL;
+  FILE *file;
+
+  if (!PyArg_ParseTuple(args, "s:", &svg_data))
+    return NULL;
+
+  cdata = svg_data_to_pdf_data_with_destination_size (svg_data, 
+                                                      strlen(svg_data),
+                                                      -1, -1, &error);
+  
+  if (error){
+    PyErr_SetString(PyExc_RuntimeError, error->message);
+    return NULL;
+  }
+  file = fopen ("blah.pdf", "wb");
+  fwrite (cdata->data, sizeof(gchar), cdata->length, file);
+  fclose(file);
+
+  return Py_BuildValue("O&", build_string_object, svg_data);
 }
 
 static PyMethodDef GhMethods[] = { 
-  {"svg2pdf", (PyCFunction) svg2pdf, METH_VARARGS, "Gets a svg filename as source and a " \
-   "pdf filename as destination, and then, generates the pdf file (wow! Are you serious ?)"},
+  {"file_to_file", (PyCFunction) file_to_file, METH_VARARGS, "Gets a svg filename as source and a "
+                                                             "pdf filename as destination, and "
+                                                             "then generates the pdf file"},
+  {"string_to_string", (PyCFunction) string_to_string, METH_VARARGS, "Gets a string containing a svg"
+                                                             "and returns a string containing the pdf"},
+
   {NULL, NULL, 0, NULL}        /* Sentinel */
 };
-
 
 PyMODINIT_FUNC
 initsvg2pdf (void)
@@ -48,5 +85,4 @@ initsvg2pdf (void)
 		     svg2pdf_module_documentation,
 		     (PyObject*)NULL,PYTHON_API_VERSION);
   if (m == NULL) return;
-
 }

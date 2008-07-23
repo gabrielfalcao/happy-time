@@ -36,7 +36,8 @@ ClosureData *
 svg_data_to_pdf_data_with_destination_size (const gchar *source, 
                                             gsize source_len,
                                             gdouble width,
-                                            gdouble height)
+                                            gdouble height,
+                                            GError **error)
 {
   RsvgHandle *svg = NULL;
   RsvgDimensionData dimensions;
@@ -44,7 +45,7 @@ svg_data_to_pdf_data_with_destination_size (const gchar *source,
   cairo_surface_t *surface;
   cairo_status_t status;
   gchar *pdfdata = NULL;
-  GError *error = NULL;
+  GError *error2 = NULL;
   gsize len;
   ClosureData *cdata;
   rsvg_init ();
@@ -52,20 +53,22 @@ svg_data_to_pdf_data_with_destination_size (const gchar *source,
   if (source_len == 0)
     source_len = strlen (source) -1;
 
-  svg = rsvg_handle_new_from_data ((guint8 *) source, source_len, &error);
+  svg = rsvg_handle_new_from_data ((guint8 *) source, source_len, &error2);
   cdata = g_new0(ClosureData, 1);
   cdata->data = (gchar*) malloc(sizeof(gchar));
   cdata->length = 0;
 
-  if (error)
+  if (error2)
     {
-      g_printerr ("Error when mapping the SVG. Check the xml compliance!\n%s\n",
-                  error->message);
+      g_propagate_error (error, error2);
       return;
     }
   if (!svg)
     {
-      g_printerr ("Impossible to create the rsvg handler\n");
+      if (*error)
+        g_error_free (*error);
+      g_set_error (error, LIBSVG2PDF_ERROR, LIBSVG2PDF_RSVG_HANDLER_ERROR,
+                   "Impossible to create the rsvg handler\n");
       return;
     }
     
@@ -82,7 +85,11 @@ svg_data_to_pdf_data_with_destination_size (const gchar *source,
 
   if (status)
     {
-      g_printerr ("Error when creating the PDF data\n");
+      if (*error)
+        g_error_free (*error);
+
+      g_set_error (error, LIBSVG2PDF_ERROR, LIBSVG2PDF_RSVG_HANDLER_ERROR,
+                   "Cairo error creating the PDF data: %s\n", cairo_status_to_string (status));
       return;
     }
   
@@ -106,28 +113,30 @@ gboolean
 svg_file_to_pdf_file (const gchar *source_filename, 
                     const gchar *destination_filename,
                     gdouble width,
-                    gdouble height)
+                    gdouble height,
+                    GError **error)
 {
   RsvgHandle *svg = NULL;
   RsvgDimensionData dimensions;
   cairo_t *cairo;
   cairo_surface_t *surface;
   cairo_status_t status;
-  GError *error = NULL;
+  GError *error2 = NULL;
 
   rsvg_init ();
 
-  svg = rsvg_handle_new_from_file (source_filename, &error);
-  if (error)
+  svg = rsvg_handle_new_from_file (source_filename, &error2);
+  if (error2)
     {
-      g_printerr ("Error when loading the SVG file \"%s\":%s\n",
-                  source_filename, error->message);
+      g_propagate_error (error, error2);
       return FALSE;
     }
 
   if (!svg)
     {
-      g_printerr ("Impossible to create the rsvg handler\n");
+      g_set_error (error, LIBSVG2PDF_ERROR, 
+                   LIBSVG2PDF_RSVG_HANDLER_ERROR,
+                   "Impossible to create the rsvg handler\n");
       return FALSE;
     }
     
@@ -141,8 +150,10 @@ svg_file_to_pdf_file (const gchar *source_filename,
   status = cairo_surface_status (surface);
   if (status)
     {
-      g_printerr ("Error when creating the PDF file \"%s\":%s\n",
-                  destination_filename, cairo_status_to_string (status));
+      if (*error)
+        g_error_free (*error);
+      g_set_error (error, LIBSVG2PDF_ERROR, LIBSVG2PDF_RSVG_HANDLER_ERROR,
+                           "Cairo error creating the PDF data: %s\n", cairo_status_to_string (status));
       return FALSE;
     }
   

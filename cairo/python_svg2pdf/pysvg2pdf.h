@@ -16,6 +16,8 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#include <Python.h>
+#include <cStringIO.h>
 
 PyDoc_STRVAR(svg2pdf_module_documentation,
 "A simple svg to pdf conversion module.\n"
@@ -30,7 +32,7 @@ PyDoc_STRVAR(svg2pdf_module_documentation,
 "  from svg2pdf import file_to_file, stream_to_stream\n"
 "\n"
 "  file_to_file('report.svg', '/home/pythonist/Report.pdf')\n"
-"  'Done!'\n"
+"  True\n"
 "\n"
 "  output_buf = StringIO()\n"
 "  input_buf = open('report.svg', 'r')\n"
@@ -40,3 +42,9 @@ PyDoc_STRVAR(svg2pdf_module_documentation,
 "\n"
 "  \n"
 "pysvg2pdf.c,v 0.1 2008/07/21 12:02:22 Gabriel Falcao <gabriel@nacaolivre.org>\n");
+
+typedef struct _PyClosureData {
+  gchar *data;
+  guint length;
+  PyObject *stringio;
+} PyClosureData;

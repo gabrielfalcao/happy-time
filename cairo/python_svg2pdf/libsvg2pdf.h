@@ -23,8 +23,12 @@
 #include <cairo/cairo-pdf.h>
 #include <librsvg/rsvg.h>
 #include <librsvg/rsvg-cairo.h>
-#include <Python.h>
 
+#define LIBSVG2PDF_ERROR g_quark_from_string ("libsvg2pdf")
+enum _libsvg2pdf_error {
+  LIBSVG2PDF_RSVG_HANDLER_ERROR,
+  LIBSVG2PDF_CAIRO_ERROR,
+};
 typedef struct _svgdata {
   RsvgHandle *handle;
   cairo_t *cairo;
@@ -38,9 +42,6 @@ typedef struct _closure_data {
   guint length;
 } ClosureData;
 
-gboolean svg_file_to_pdf_file (const gchar *source_filename, const gchar *destination_filename, gdouble width, gdouble height);
-PyObject* svg2pdf (PyObject *source_filename, PyObject *destination_filename);
-void svg2pdf2 (const gchar *source_filename, const gchar *destination_filename);
-void svg_file_to_pdf_file2 (const gchar *source_filename, const gchar *destination_filename, gdouble width, gdouble height);
-ClosureData * svg_data_to_pdf_data_with_destination_size (const gchar *source, gsize source_len, gdouble width, gdouble height);
+gboolean svg_file_to_pdf_file (const gchar *source_filename, const gchar *destination_filename, gdouble width, gdouble height, GError **error);
+ClosureData * svg_data_to_pdf_data_with_destination_size (const gchar *source, gsize source_len, gdouble width, gdouble height, GError **error);
 
