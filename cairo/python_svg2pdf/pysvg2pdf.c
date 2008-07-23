@@ -60,11 +60,8 @@ string_to_string (PyObject *self, PyObject *args)
     PyErr_SetString(PyExc_RuntimeError, error->message);
     return NULL;
   }
-  file = fopen ("blah.pdf", "wb");
-  fwrite (cdata->data, sizeof(gchar), cdata->length, file);
-  fclose(file);
 
-  return Py_BuildValue("O&", build_string_object, svg_data);
+  return PyString_FromStringAndSize(cdata->data, cdata->length);
 }
 
 static PyMethodDef GhMethods[] = { 

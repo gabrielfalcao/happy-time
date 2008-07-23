@@ -1,10 +1,10 @@
 
 #include "Python.h"
 #include "import.h"
-#include "pysvg2pdfio.h"
+#include "cStringIO.h"
 #include "structmember.h"
 
-PyDoc_STRVAR(PySVG2PDFIO_module_documentation,
+PyDoc_STRVAR(cStringIO_module_documentation,
 "A simple fast partial StringIO replacement.\n"
 "\n"
 "This module provides a simple useful replacement for\n"
@@ -15,7 +15,7 @@ PyDoc_STRVAR(PySVG2PDFIO_module_documentation,
 "\n"
 "Usage:\n"
 "\n"
-"  from PySVG2PDFIO import StringIO\n"
+"  from cStringIO import StringIO\n"
 "\n"
 "  an_output_stream=StringIO()\n"
 "  an_output_stream.write(some_stuff)\n"
@@ -31,7 +31,7 @@ PyDoc_STRVAR(PySVG2PDFIO_module_documentation,
 "If someone else wants to provide a more complete implementation,\n"
 "go for it. :-)  \n"
 "\n"
-"PySVG2PDFIO.c,v 1.29 1999/06/15 14:10:27 jim Exp\n");
+"cStringIO.c,v 1.29 1999/06/15 14:10:27 jim Exp\n");
 
 /* Declaration for file-like objects that manage data as strings 
 
@@ -517,7 +517,7 @@ PyDoc_STRVAR(Otype__doc__, "Simple type for output to strings.");
 static PyTypeObject Otype = {
   PyObject_HEAD_INIT(NULL)
   0,	       			/*ob_size*/
-  "PySVG2PDFIO.StringO",   	/*tp_name*/
+  "cStringIO.StringO",   	/*tp_name*/
   sizeof(Oobject),       	/*tp_basicsize*/
   0,	       			/*tp_itemsize*/
   /* methods */
@@ -638,7 +638,7 @@ PyDoc_STRVAR(Itype__doc__,
 static PyTypeObject Itype = {
   PyObject_HEAD_INIT(NULL)
   0,					/*ob_size*/
-  "PySVG2PDFIO.StringI",			/*tp_name*/
+  "cStringIO.StringI",			/*tp_name*/
   sizeof(Iobject),			/*tp_basicsize*/
   0,					/*tp_itemsize*/
   /* methods */
@@ -719,9 +719,9 @@ static struct PyMethodDef IO_methods[] = {
 };
 
 
-/* Initialization function for the module (*must* be called initPySVG2PDFIO) */
+/* Initialization function for the module (*must* be called initcStringIO) */
 
-static struct PyPySVG2PDFIO_CAPI CAPI = {
+static struct PycStringIO_CAPI CAPI = {
   IO_cread,
   IO_creadline,
   O_cwrite,
@@ -736,13 +736,13 @@ static struct PyPySVG2PDFIO_CAPI CAPI = {
 #define PyMODINIT_FUNC void
 #endif
 PyMODINIT_FUNC
-initPySVG2PDFIO(void) {
+initcStringIO(void) {
   PyObject *m, *d, *v;
 
 
   /* Create the module and add the functions */
-  m = Py_InitModule4("PySVG2PDFIO", IO_methods,
-		     PySVG2PDFIO_module_documentation,
+  m = Py_InitModule4("cStringIO", IO_methods,
+		     cStringIO_module_documentation,
 		     (PyObject*)NULL,PYTHON_API_VERSION);
   if (m == NULL) return;
 
@@ -754,7 +754,7 @@ initPySVG2PDFIO(void) {
   Otype.ob_type=&PyType_Type;
   if (PyType_Ready(&Otype) < 0) return;
   if (PyType_Ready(&Itype) < 0) return;
-  PyDict_SetItemString(d,"PySVG2PDFIO_CAPI",
+  PyDict_SetItemString(d,"cStringIO_CAPI",
 		       v = PyCObject_FromVoidPtr(&CAPI,NULL));
   Py_XDECREF(v);
 
