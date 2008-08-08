@@ -65,6 +65,12 @@ copy_async_data_new (GError **err)
   return data;
 }
 
+gboolean
+copy_async_done (gpointer data)
+{
+  return FALSE;
+}
+
 void
 copy_async_data_free (gpointer data)
 {
@@ -80,16 +86,18 @@ copy_progress_callback (goffset current_num_bytes, goffset total_num_bytes,
   CopyAsyncData *data = user_data;
   gdouble percent;
   gchar *text;
-
+  
+  GDK_THREADS_ENTER ();
   if (g_cancellable_is_cancelled(data->cancel))
       return;
-
+  
   percent = current_num_bytes / (total_num_bytes / 100);
   text = g_strdup_printf ("%li%% (%li kb of %li kb)", (long int)percent, (long int)current_num_bytes / 1024, (long int)total_num_bytes / 1024);
-
+  g_printerr ("%s\n", text);
   gtk_progress_bar_set_text (GTK_PROGRESS_BAR(data->progress), text);
   gtk_progress_bar_set_fraction  (GTK_PROGRESS_BAR(data->progress), percent / 100);
   g_free (text);
+  GDK_THREADS_LEAVE ();
 }
 
 gboolean
@@ -102,6 +110,7 @@ do_copy_async (GIOSchedulerJob *job,
   GError *err = NULL;
   result = FALSE;
   data->job = job;
+  g_io_scheduler_job_send_to_mainloop (job, copy_async_done, NULL, NULL);
   if ((cancellable) && (g_cancellable_is_cancelled (cancellable)))
     {
       data->done = FALSE;
@@ -111,6 +120,7 @@ do_copy_async (GIOSchedulerJob *job,
       g_cancellable_reset (data->cancel);
       return FALSE;
     }
+
   result = g_file_copy (data->source,
 			data->destination,
 			G_FILE_COPY_OVERWRITE,
@@ -118,6 +128,7 @@ do_copy_async (GIOSchedulerJob *job,
 			copy_progress_callback,
 			data,
 			&err);
+
   if (result)
     {
       gtk_progress_bar_set_text (GTK_PROGRESS_BAR(data->progress), "Copied successfully (It's in your ~/Desktop)");
@@ -133,15 +144,8 @@ do_copy_async (GIOSchedulerJob *job,
 
   data->done = TRUE;
 
+
   return FALSE;
-}
-
-void
-copy_async_done (GObject *source_object,
-                 GAsyncResult *res,
-                 gpointer user_data)
-{
-
 }
 
 void
@@ -195,10 +199,9 @@ main (int argc, char **argv)
   GError *err = NULL;
 
   CopyAsyncData *data;
-
-  gtk_init (&argc, &argv);
   g_thread_init (NULL);
-
+  gdk_threads_init ();
+  gtk_init (&argc, &argv);
   data = copy_async_data_new (&err);
 
   gtk_widget_set_size_request (data->window, 500, 150);
@@ -207,7 +210,7 @@ main (int argc, char **argv)
   gtk_box_pack_start (GTK_BOX(data->vbox), data->btn, TRUE, FALSE, 2);
   gtk_box_pack_start (GTK_BOX(data->vbox), data->btncancel, TRUE, FALSE, 2);
   gtk_container_add (GTK_CONTAINER(data->window), data->vbox);
-  gtk_entry_set_text (GTK_ENTRY(data->text), "http://gabrielfalcao.com/bia_moveis_e_jethro_tull.zip");
+  gtk_entry_set_text (GTK_ENTRY(data->text), "http://gabrielfalcao.com/ritmosdomundo_cuba.rar");
   gtk_widget_show_all (data->window);
 
   g_signal_connect (data->btn, "clicked", (GCallback)copy_file, data);
