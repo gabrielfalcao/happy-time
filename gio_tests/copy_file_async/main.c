@@ -84,13 +84,11 @@ copy_progress_callback (goffset current_num_bytes, goffset total_num_bytes,
   if (g_cancellable_is_cancelled(data->cancel))
       return;
 
-  gdk_threads_init ();
   percent = current_num_bytes / (total_num_bytes / 100);
   text = g_strdup_printf ("%li%% (%li kb of %li kb)", (long int)percent, (long int)current_num_bytes / 1024, (long int)total_num_bytes / 1024);
 
   gtk_progress_bar_set_text (GTK_PROGRESS_BAR(data->progress), text);
   gtk_progress_bar_set_fraction  (GTK_PROGRESS_BAR(data->progress), percent / 100);
-  gdk_threads_leave ();
   g_free (text);
 }
 
@@ -107,12 +105,10 @@ do_copy_async (GIOSchedulerJob *job,
   if ((cancellable) && (g_cancellable_is_cancelled (cancellable)))
     {
       data->done = FALSE;
-      gdk_threads_init ();
       gtk_widget_set_sensitive (data->btn, TRUE);
       gtk_widget_set_sensitive (data->btncancel, FALSE);
       gtk_progress_bar_set_text (GTK_PROGRESS_BAR(data->progress), "Cancelled!");
       g_cancellable_reset (data->cancel);
-      gdk_threads_leave ();
       return FALSE;
     }
   result = g_file_copy (data->source,
@@ -124,10 +120,8 @@ do_copy_async (GIOSchedulerJob *job,
 			&err);
   if (result)
     {
-      gdk_threads_init ();
       gtk_progress_bar_set_text (GTK_PROGRESS_BAR(data->progress), "Copied successfully (It's in your ~/Desktop)");
       data->done = TRUE;
-      gdk_threads_leave ();
     }
 
 
@@ -155,7 +149,6 @@ cancel_copy (GtkButton *button, gpointer user_data)
 {
   CopyAsyncData *data = user_data;
 
-  gdk_threads_init ();
   g_cancellable_cancel (data->cancel);
   gtk_progress_bar_set_text (GTK_PROGRESS_BAR(data->progress), "Cancelled!");
   gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR(data->progress), 0);
@@ -163,7 +156,6 @@ cancel_copy (GtkButton *button, gpointer user_data)
   gtk_widget_set_sensitive (data->btncancel, FALSE);
   gtk_widget_set_sensitive (data->btn, TRUE);
   g_io_scheduler_cancel_all_jobs ();
-  gdk_threads_leave ();
 }
 
 void
