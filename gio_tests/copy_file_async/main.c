@@ -58,8 +58,8 @@ copy_async_data_new (GError **err)
   data->window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
   data->vbox = gtk_vbox_new (TRUE, 2);
   data->progress = gtk_progress_bar_new ();
-  data->btn = gtk_button_new_with_label ("Copiar");
-  data->btncancel = gtk_button_new_with_label ("Cancelar");
+  data->btn = gtk_button_new_with_label ("Copy file (download)");
+  data->btncancel = gtk_button_new_with_label ("Cancel");
   gtk_widget_set_sensitive (data->btncancel, FALSE);
 
   return data;
@@ -86,7 +86,7 @@ copy_progress_callback (goffset current_num_bytes, goffset total_num_bytes,
 
   gdk_threads_init ();
   percent = current_num_bytes / (total_num_bytes / 100);
-  text = g_strdup_printf ("%li %% (%li kb de %li kb)", (long int)percent, (long int)current_num_bytes / 1024, (long int)total_num_bytes / 1024);
+  text = g_strdup_printf ("%li%% (%li kb of %li kb)", (long int)percent, (long int)current_num_bytes / 1024, (long int)total_num_bytes / 1024);
 
   gtk_progress_bar_set_text (GTK_PROGRESS_BAR(data->progress), text);
   gtk_progress_bar_set_fraction  (GTK_PROGRESS_BAR(data->progress), percent / 100);
@@ -110,7 +110,7 @@ do_copy_async (GIOSchedulerJob *job,
       gdk_threads_init ();
       gtk_widget_set_sensitive (data->btn, TRUE);
       gtk_widget_set_sensitive (data->btncancel, FALSE);
-      gtk_progress_bar_set_text (GTK_PROGRESS_BAR(data->progress), "Cancelado!");
+      gtk_progress_bar_set_text (GTK_PROGRESS_BAR(data->progress), "Cancelled!");
       g_cancellable_reset (data->cancel);
       gdk_threads_leave ();
       return FALSE;
@@ -125,7 +125,7 @@ do_copy_async (GIOSchedulerJob *job,
   if (result)
     {
       gdk_threads_init ();
-      gtk_progress_bar_set_text (GTK_PROGRESS_BAR(data->progress), "Copiado com sucesso! (Tá no seu Desktop)");
+      gtk_progress_bar_set_text (GTK_PROGRESS_BAR(data->progress), "Copied successfully (It's in your ~/Desktop)");
       data->done = TRUE;
       gdk_threads_leave ();
     }
@@ -157,11 +157,12 @@ cancel_copy (GtkButton *button, gpointer user_data)
 
   gdk_threads_init ();
   g_cancellable_cancel (data->cancel);
-  gtk_progress_bar_set_text (GTK_PROGRESS_BAR(data->progress), "Cancelado!");
+  gtk_progress_bar_set_text (GTK_PROGRESS_BAR(data->progress), "Cancelled!");
   gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR(data->progress), 0);
 
   gtk_widget_set_sensitive (data->btncancel, FALSE);
   gtk_widget_set_sensitive (data->btn, TRUE);
+  g_io_scheduler_cancel_all_jobs ();
   gdk_threads_leave ();
 }
 
@@ -171,6 +172,17 @@ copy_file (GtkButton *button, gpointer user_data)
 
   CopyAsyncData *data = user_data;
   gchar *destpath, *filename;
+  if (G_IS_FILE(data->source))
+    {
+      g_object_unref (data->source);
+      data->source = NULL;
+    }
+  if (G_IS_FILE(data->destination))
+    {
+      g_object_unref (data->destination);
+      data->destination = NULL;
+    }
+
   data->source = g_file_new_for_commandline_arg (gtk_entry_get_text (GTK_ENTRY(data->text)));
   filename = g_file_get_basename (data->source);
   destpath = g_build_filename ("file:///home/", g_get_user_name (), "Desktop",  filename, NULL);
