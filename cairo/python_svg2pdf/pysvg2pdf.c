@@ -55,7 +55,9 @@ string_to_string (PyObject *self, PyObject *args)
   cdata = svg_data_to_pdf_data_with_destination_size (svg_data, 
                                                       strlen(svg_data),
                                                       -1, -1, &error);
-  
+  file = fopen("blah.svg", "w");
+  fwrite(svg_data, sizeof(gchar), strlen(svg_data), file);
+  fclose(file);
   if (error){
     PyErr_SetString(PyExc_RuntimeError, error->message);
     return NULL;
